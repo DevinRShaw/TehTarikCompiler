@@ -1,0 +1,72 @@
+lexical analysis:
+break into tokens = valid symbols in the language 
+file contents are a stream of characters, FA used to interpret the sequence 
+
+tokens 
+    keywords and special symbols are easy, constant 
+    numbers and IDs harder, they are variable 
+
+    lexemes are strings that match a token pattern 
+
+    tokens have attributes, example a NUM could be 5 
+    tokens are represented by both their token type and their attributes such as lexemes
+
+    we traverse the character stream to identify tokens 
+        ex: a[i] = 4 + 2 
+            problem: how do we know a is not prefix to keyword AND? 
+
+    keywords are prefered and longest token is also prefered 
+        ex: if (keyword not ID), <> (not equal instead of two seperate tokens)
+    
+regex 
+    define patterns in text 
+
+    we can define tokens via regex as well 
+
+    are equivalent to finite automata 
+        we want to avoid NFA as they are computationally expensive for us to use 
+
+BIG IDEAS:
+    we want to turn code from sequence of characters to a sequence of TOKENS
+    TOKENS are seperted into categories such as (KEYWORDS and SPECIAL SYMBOLS) easier, (NUMBERS and IDS) harder 
+    sequences of characters that match TOKEN patterns are LEXEMES 
+    TOKENS have attributes that define their contents EX: token NUM could have attribute that is equal to 5 {NUM, 5}
+
+    we use REGEX to define our token patterns when we search through our character stream 
+        lots to learn with this, learn as we go and skim 
+
+    TOKEN AMBIGUITY solution = keywords and longer tokens break ties EX: <> isnt < and > its <> not equal TOKEN 
+
+    TOKEN DELIMITERS = ends the token, not a apart of it EX: array[i], here array is the token and bracket ends it 
+                     = consumed not examined 
+
+    FA and REGEX are equivalent 
+
+    avoid NFA, DFA is cheaper computationally
+
+    FLEX = move forward until impossible, backtrack to find the latest accept state 
+         = no accept state means actual error
+
+        EX: TOKENS are <= and < , its two state dfa with < state and <= state accepting states 
+
+        if input is <<==<
+            take <, its good
+            take <, error go back to <, < is the token
+            take <, its good
+            take =, its good 
+            take =, error go back to the <=, its the token 
+            take =, error but this time actual error in program 
+
+            
+
+
+        
+
+
+
+
+
+
+
+
+

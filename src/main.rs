@@ -153,17 +153,34 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
       }
 
       //example from lecture guided this one (< and <= are possible tokens)
+      //lookahead, if valid then go to second accept state, else accept original 
 
       '<' => {
         if i + 1 < bytes.len(){ //if able, check next char for = to make <= token, longer token prefered 
-          if bytes[i+1] = b'=' {
+          if bytes[i+1] == b'=' {
             tokens.push(Token::LessEqual);
             i += 1; 
             break;
           }
         }
-        
+        //avoid else with breaks, less code that way 
         tokens.push(Token::Less);
+        i += 1; 
+      }
+
+
+      //very similar logic to above code 
+
+      '>' => {
+        if i + 1 < bytes.len(){ //if able, check next char for = to make <= token, longer token prefered 
+          if bytes[i+1] == b'=' {
+            tokens.push(Token::GreaterEqual);
+            i += 1; 
+            break;
+          }
+        }
+        //avoid else with breaks, less code that way 
+        tokens.push(Token::Greater);
         i += 1; 
       }
   

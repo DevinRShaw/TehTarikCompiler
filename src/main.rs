@@ -115,7 +115,7 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
   
       match c {
     
-      //does this need to account for invalid variable namings? 
+      //does this need to account for invalid variable namings? original give errors for (digit)(char)* which is invalid in this language? 
       '0'..='9' => {
         let start = i;
         i += 1;
@@ -141,6 +141,10 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
   
       ' ' | '\n' => {
         i += 1;
+      }
+
+      '#' => {
+        while bytes[i] != 
       }
   
       _ => {

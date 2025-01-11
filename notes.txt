@@ -47,17 +47,30 @@ BIG IDEAS:
     FLEX = move forward until impossible, backtrack to find the latest accept state 
          = no accept state means actual error
 
-        EX: TOKENS are <= and < , its two state dfa with < state and <= state accepting states 
+        EX: TOKENS are <= and < , its two state dfa with < state and <= state as the accepting states 
 
-        if input is <<==<
-            take <, its good
-            take <, error go back to <, < is the token
-            take <, its good
-            take =, its good 
-            take =, error go back to the <=, its the token 
+        if input is <<==<:
+            take <, state <
+            take <, no transition error go back to <, < is the token
+            take <, state <
+            take =, state <= 
+            take =, no transition error go back to the <=, it is the token 
             take =, error but this time actual error in program 
 
-            
+            CODE: 
+
+                '<' => {
+                    if i + 1 < bytes.len(){  //if able, check next char for = to make <= token, longer token prefered 
+                    if bytes[i+1] == b'=' {
+                        tokens.push(Token::LessEqual);
+                        i += 1; 
+                        break;
+                    }
+                    }
+                    //avoid else with breaks, less code that way 
+                    tokens.push(Token::Less);
+                    i += 1; 
+                }
 
 
         

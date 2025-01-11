@@ -128,20 +128,18 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
           }
         }
         let end = i;
+
+        // Check if the next character is alphabetic, which would indicate an invalid variable
+        if i < bytes.len() && (bytes[i] as char).is_alphabetic() {
+          return Err(format!("Invalid variable name starting with a number at: {}", &code[start..]));
+        }
+
         let string_token = &code[start..end];
         let number_value = string_token.parse::<i32>().unwrap();
         let token = Token::Num(number_value);
         tokens.push(token);
       }
   
-      '+' => {
-        tokens.push(Token::Plus);
-        i += 1;
-      }
-  
-      ' ' | '\n' => {
-        i += 1;
-      }
       
       //comments do not need to become tokens as they carry zero meaning to the program, we can just skip that part 
         //Q: how to handle the idea of two chars for one symbol here? 
@@ -160,7 +158,7 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
           if bytes[i+1] == b'=' {
             tokens.push(Token::LessEqual);
             i += 1; 
-            break;
+            continue;
           }
         }
         //avoid else with breaks, less code that way 
@@ -176,21 +174,98 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
           if bytes[i+1] == b'=' {
             tokens.push(Token::GreaterEqual);
             i += 1; 
-            break;
+            continue;
           }
         }
         //avoid else with breaks, less code that way 
         tokens.push(Token::Greater);
         i += 1; 
       }
-  
+
+
+      '!' => {
+        if i + 1 < bytes.len(){ //if able, check next char for = to make <= token, longer token prefered 
+          if bytes[i+1] == b'=' {
+            tokens.push(Token::NotEqual);
+            i += 1; 
+            continue;
+          }
+        }
+
+        //need to have error handling, ! will not accept 
+        return Err(format!("Unrecognized symbol '{}'", c));
+        i += 1; 
+      }
+
+      //change this to match the logic of = or == symbols 
+      '=' => {
+        tokens.push(Token::Assign);
+        i += 1;
+      }
+
+      ' ' | '\n' => {
+        i += 1; // Skip whitespace and newlines
+      }
+
+      '+' => {
+        tokens.push(Token::Plus);
+        i += 1;
+      }
+      '-' => {
+        tokens.push(Token::Subtract);
+        i += 1;
+      }
+      '*' => {
+        tokens.push(Token::Multiply);
+        i += 1;
+      }
+      '/' => {
+        tokens.push(Token::Divide);
+        i += 1;
+      }
+      '%' => {
+        tokens.push(Token::Modulus);
+        i += 1;
+      }
+    
+      '(' => {
+        tokens.push(Token::LeftParen);
+        i += 1;
+      }
+      ')' => {
+        tokens.push(Token::RightParen);
+        i += 1;
+      }
+      '{' => {
+        tokens.push(Token::LeftCurly);
+        i += 1;
+      }
+      '}' => {
+        tokens.push(Token::RightCurly);
+        i += 1;
+      }
+      '[' => {
+        tokens.push(Token::LeftBracket);
+        i += 1;
+      }
+      ']' => {
+        tokens.push(Token::RightBracket);
+        i += 1;
+      }
+      ',' => {
+        tokens.push(Token::Comma);
+        i += 1;
+      }
+      ';' => {
+        tokens.push(Token::Semicolon);
+        i += 1;
+      }
       _ => {
         return Err(format!("Unrecognized symbol '{}'", c));
       }
-  
-      }
     }
-  
     tokens.push(Token::End);
-    return Ok(tokens);
+    return Ok(tokens); //part of the error handling of the result aspect of rust 
+
   }
+}

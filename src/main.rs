@@ -124,7 +124,7 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
           if digit >= '0' && digit <= '9' {
             i += 1;
           } else {
-            break;
+            break; //this handles invalid namings alrady I believe 
           }
         }
         let end = i;
@@ -143,10 +143,28 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
         i += 1;
       }
       
+      //comments do not need to become tokens as they carry zero meaning to the program, we can just skip that part 
+        //Q: how to handle the idea of two chars for one symbol here? 
+        //A: b'\n' is a byte literal 
       '#' => {
-        while bytes[i] != '\n'{
+        while bytes[i] != b'\n'{
           i += 1; 
         }
+      }
+
+      //example from lecture guided this one (< and <= are possible tokens)
+
+      '<' => {
+        if i + 1 < bytes.len(){ //if able, check next char for = to make <= token, longer token prefered 
+          if bytes[i+1] = b'=' {
+            tokens.push(Token::LessEqual);
+            i += 1; 
+            break;
+          }
+        }
+        
+        tokens.push(Token::Less);
+        i += 1; 
       }
   
       _ => {

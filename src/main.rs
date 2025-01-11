@@ -142,9 +142,11 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
       ' ' | '\n' => {
         i += 1;
       }
-
+      
       '#' => {
-        while bytes[i] != 
+        while bytes[i] != '\n'{
+          i += 1; 
+        }
       }
   
       _ => {

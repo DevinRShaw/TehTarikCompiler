@@ -10,7 +10,7 @@ fn main() {
     // Let us get commandline arguments and store them in a Vec<String>
     let args: Vec<String> = env::args().collect();
     if args.len() == 1 {
-        println!("Please provide an input file through the commandline arguments for the lexer.");
+        println!("Please provide an input file through the commandline arguments for the lex.");
         return;
     }
 
@@ -46,7 +46,7 @@ fn main() {
       };
 
 
-    // print out the lexer tokens parsed.
+    // print out the lex tokens parsed.
 
     println!("----------------------");
     println!("Finished Lexing the file {}", filename);
@@ -65,7 +65,7 @@ fn main() {
 
 //have to expand the Token enum to include assignment tokens too 
 
-#[derive(Debug, Clone)] // Rust generates these traits for use by us in development
+#[derive(Debug, Clone, PartialEq)] // Rust generates these traits for use by us in development
 enum Token {
     Plus,             // +
     Subtract,         // -
@@ -102,9 +102,26 @@ enum Token {
     End,              // Marks the end of the list of tokens
 }
 
+//handles keywords 
+fn create_identifier(code: &str) -> Token {
+  match code {
+      "func" => Token::Func,
+      "return" => Token::Return,
+      "int" => Token::Int,
+      "print" => Token::Print,
+      "else" => Token::Else,
+      "break" => Token::Break,
+      "continue" => Token::Continue,
+      "while" => Token::While,
+      "if" => Token::If,
+      "read" => Token::Read,
+      _ => Token::Ident(String::from(code)), // For non-keyword identifiers
+  }
+}
 
 
-// Extend this lexer to work for all tokens above 
+
+// Extend this lex to work for all tokens above 
 fn lex(code: &str) -> Result<Vec<Token>, String> {
     let bytes = code.as_bytes();
     let mut tokens: Vec<Token> = vec![];
@@ -112,8 +129,32 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
     let mut i = 0;
     while i < bytes.len() {
       let c = bytes[i] as char;
+
   
       match c {
+
+      //text handling for keywords and identifiers 
+      // strategy is to read in the 
+      'a'..='z' | 'A'..='Z' => {
+        // Handle alphabetic characters
+        let start = i;
+        i += 1;
+        while i < bytes.len() {
+          let character = bytes[i] as char;
+          if (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || (character >= '0' && character <= '9'){
+              i += 1;
+          } else {
+              break; // Exit the loop if it's not an alphabetical character
+          }
+        }
+        let end = i;
+        //aab3
+        let string_token = &code[start..end];
+
+        tokens.push(create_identifier(string_token));
+      }
+
+
     
       //does this need to account for invalid variable namings? original give errors for (digit)(char)* which is invalid in this language? 
       '0'..='9' => {
@@ -157,7 +198,8 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
         if i + 1 < bytes.len(){ //if able, check next char for = to make <= token, longer token prefered 
           if bytes[i+1] == b'=' {
             tokens.push(Token::LessEqual);
-            i += 1; 
+            i += 2; 
+            //go to the next scan 
             continue;
           }
         }
@@ -173,11 +215,11 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
         if i + 1 < bytes.len(){ //if able, check next char for = to make <= token, longer token prefered 
           if bytes[i+1] == b'=' {
             tokens.push(Token::GreaterEqual);
-            i += 1; 
+            i += 2; 
             continue;
           }
         }
-        //avoid else with breaks, less code that way 
+        //avoid else with continue, less code that way 
         tokens.push(Token::Greater);
         i += 1; 
       }
@@ -187,18 +229,26 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
         if i + 1 < bytes.len(){ //if able, check next char for = to make <= token, longer token prefered 
           if bytes[i+1] == b'=' {
             tokens.push(Token::NotEqual);
-            i += 1; 
+            i += 2; 
             continue;
           }
         }
 
         //need to have error handling, ! will not accept 
         return Err(format!("Unrecognized symbol '{}'", c));
-        i += 1; 
       }
 
       //change this to match the logic of = or == symbols 
       '=' => {
+        if i + 1 < bytes.len(){ //if able, check next char for = to make <= token, longer token prefered 
+          if bytes[i+1] == b'=' {
+            tokens.push(Token::Equality);
+            i += 2; 
+            continue;
+          }
+        }
+
+        //avoid else with continue, less code that way 
         tokens.push(Token::Assign);
         i += 1;
       }
@@ -264,8 +314,144 @@ fn lex(code: &str) -> Result<Vec<Token>, String> {
         return Err(format!("Unrecognized symbol '{}'", c));
       }
     }
+  }
+    
     tokens.push(Token::End);
     return Ok(tokens); //part of the error handling of the result aspect of rust 
-
   }
-}
+ 
+
+
+
+  #[cfg(test)]
+  mod tests {
+      use super::*;
+  
+      #[test]
+      fn test_valid_identifier() {
+          let input = "abc def ghi";
+          let expected_tokens = vec![
+              Token::Ident("abc".to_string()),
+              Token::Ident("def".to_string()),
+              Token::Ident("ghi".to_string()),
+              Token::End,
+          ];
+  
+          let result = lex(input);
+          assert_eq!(result, Ok(expected_tokens));
+      }
+  
+      #[test]
+      fn test_invalid_identifier() {
+          let input = "1abc";
+          
+          let result = lex(input);
+          assert_eq!(result, Err("Invalid variable name starting with a number at: 1abc".to_string()));
+      }
+  
+      #[test]
+      fn test_number_token() {
+          let input = "123 456 789";
+          let expected_tokens = vec![
+              Token::Num(123),
+              Token::Num(456),
+              Token::Num(789),
+              Token::End,
+          ];
+  
+          let result = lex(input);
+          assert_eq!(result, Ok(expected_tokens));
+      }
+  
+      #[test]
+      fn test_comment_ignoring() {
+          let input = "var x # this is a comment\nvar y";
+          let expected_tokens = vec![
+              Token::Ident("var".to_string()),
+              Token::Ident("x".to_string()),
+              Token::Ident("var".to_string()),
+              Token::Ident("y".to_string()),
+              Token::End,
+          ];
+  
+          let result = lex(input);
+          assert_eq!(result, Ok(expected_tokens));
+      }
+  
+      #[test]
+      fn test_operator_tokens() {
+          let input = "+ - * /";
+          let expected_tokens = vec![
+              Token::Plus,
+              Token::Subtract,
+              Token::Multiply,
+              Token::Divide,
+              Token::End,
+          ];
+  
+          let result = lex(input);
+          assert_eq!(result, Ok(expected_tokens));
+      }
+  
+      #[test]
+      fn test_symbol_tokens() {
+          let input = "( ) { } [ ] , ;";
+          let expected_tokens = vec![
+              Token::LeftParen,
+              Token::RightParen,
+              Token::LeftCurly,
+              Token::RightCurly,
+              Token::LeftBracket,
+              Token::RightBracket,
+              Token::Comma,
+              Token::Semicolon,
+              Token::End,
+          ];
+  
+          let result = lex(input);
+          assert_eq!(result, Ok(expected_tokens));
+      }
+  
+      #[test]
+      fn test_multi_char_tokens() {
+          let input = "< <= > >= == =";
+          let expected_tokens = vec![
+              Token::Less,
+              Token::LessEqual,
+              Token::Greater,
+              Token::GreaterEqual,
+              Token::Equality,
+              Token::Assign,
+              Token::End,
+          ];
+  
+          let result = lex(input);
+          assert_eq!(result, Ok(expected_tokens));
+      }
+  
+      #[test]
+      fn test_unrecognized_symbol() {
+          let input = "&";
+          
+          let result = lex(input);
+          assert_eq!(result, Err("Unrecognized symbol '&'".to_string()));
+      }
+  
+      #[test]
+      fn test_empty_input() {
+          let input = "";
+          let expected_tokens = vec![Token::End];
+          
+          let result = lex(input);
+          assert_eq!(result, Ok(expected_tokens));
+      }
+  
+      #[test]
+      fn test_invalid_token_with_digit() {
+          let input = "123abc";
+          
+          let result = lex(input);
+          assert_eq!(result, Err("Invalid variable name starting with a number at: 123abc".to_string()));
+      }
+  }
+  
